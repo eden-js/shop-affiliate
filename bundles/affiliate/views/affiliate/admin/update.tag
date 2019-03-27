@@ -3,7 +3,7 @@
 
     <admin-header title="{ opts.item && opts.item.id ? 'Update' : 'Create ' } Affiliate" preview={ this.preview } on-preview={ onPreview }>
       <yield to="right">
-        <a href="/admin//affiliate/affiliate" class="btn btn-lg btn-primary mr-2">
+        <a href="/admin/affiliate" class="btn btn-lg btn-primary mr-2">
           Back
         </a>
         <button class={ 'btn btn-lg' : true, 'btn-primary' : opts.preview, 'btn-success' : !opts.preview } onclick={ opts.onPreview }>
@@ -15,7 +15,7 @@
     <div class="container-fluid">
       <div class="card">
         <div class="card-body">
-          <form-render action="/admin//affiliate/affiliate/{ opts.item && opts.item.id ? opts.item.id + '/update' : 'create' }" method="post" ref="form" form={ opts.form } placement="ifactory.affiliate" positions={ this.positions } preview={ this.preview } class="d-block mb-3" />
+          <form-render action="/admin/affiliate/{ opts.item && opts.item.id ? opts.item.id + '/update' : 'create' }" method="post" ref="form" form={ opts.form } placement="edenjs.shop.affiliate" positions={ this.positions } preview={ this.preview } class="d-block mb-3" />
         </div>
         <div class="card-footer text-right">
           <button type="button" onclick={ onSubmit } class={ 'btn btn-success' : true, 'disabled' : this.loading } disabled={ this.loading }>

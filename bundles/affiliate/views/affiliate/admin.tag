@@ -3,7 +3,7 @@
 
     <admin-header title="Manage Affiliates">
       <yield to="right">
-        <a href="/admin//affiliate/affiliate/create" class="btn btn-lg btn-success">
+        <a href="/admin/affiliate/create" class="btn btn-lg btn-success">
           <i class="fa fa-plus ml-2"></i> Create Affiliate
         </a>
       </yield>

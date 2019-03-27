@@ -6,7 +6,7 @@
           { opts.field.label }
           <i if={ !opts.field.label }>Set Label</i>
         </label>
-        <eden-select ref="select" url="/admin//affiliate/affiliate/query" required={ opts.field.required } name={ opts.field.uuid } multiple={ opts.field.multiple } label={ opts.field.label || 'Search by Name' } data={ opts.data }>
+        <eden-select ref="select" url="/admin/affiliate/query" required={ opts.field.required } name={ opts.field.uuid } multiple={ opts.field.multiple } label={ opts.field.label || 'Search by Name' } data={ opts.data }>
           <option each={ affiliate, i in opts.data.value || [] } selected="true" value={ affiliate.id }>
             { affiliate.name }
           </option>
