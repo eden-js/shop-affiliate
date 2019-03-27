@@ -1,11 +1,13 @@
 
 // Require dependencies
+const Grid        = require('grid');
 const Controller  = require('controller');
 const escapeRegex = require('escape-string-regexp');
 
 // Require models
 const Code      = model('affiliateCode');
 const User      = model('user');
+const Credit    = model('credit');
 const Affiliate = model('affiliate');
 
 // require helpers
