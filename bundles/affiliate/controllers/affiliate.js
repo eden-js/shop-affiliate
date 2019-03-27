@@ -212,7 +212,6 @@ class AffiliateController extends Controller {
    * @acl    true
    * @fail   /login
    * @route  {get} /affiliate
-   * @layout no-user
    * @return {Promise}
    */
   async indexAction (req, res) {
@@ -229,21 +228,18 @@ class AffiliateController extends Controller {
 
     // render
     res.render('affiliate', {
-      'grid'    : await this._grid(req.user).render(req),
+      'grid'    : await (await this._grid(affiliate)).render(req),
       'codes'   : await Promise.all(codes.map((code) => code.sanitise())),
       'credits' : {
-        'all'   : await this._credits(req.user),
-        'month' : await this._credits(req.user, true)
+        'all'   : await this._credits(affiliate),
+        'month' : await this._credits(affiliate, true)
       },
       'totals' : {
-        'all'   : await this._totals(req.user),
-        'month' : await this._totals(req.user, true)
+        'all'   : await this._totals(affiliate),
+        'month' : await this._totals(affiliate, true)
       },
-      'discount' : await credit.where({
-        'referrer.id' : req.user.get('_id').toString()
-      }).sum('discount'),
-      'orders' : await credit.where({
-        'referrer.id' : req.user.get('_id').toString()
+      'orders' : await Credit.where({
+        'affiliate.id' : affiliate.get('_id').toString()
       }).sum('total')
     });
   }
@@ -266,14 +262,15 @@ class AffiliateController extends Controller {
   /**
    * returns total case opens value
    *
-   * @param  {user}  User
+   * @param  {Affiliate} affiliate
+   * @param  {Boolean}   month
    *
    * @return {Promise}
    */
-  async _credits(user, month) {
+  async _credits(affiliate, month) {
     // get total
     let total = Credit.where({
-      'referrer.id' : user.get('_id').toString()
+      'affiliate.id' : affiliate.get('_id').toString()
     });
 
     // check month
@@ -284,11 +281,32 @@ class AffiliateController extends Controller {
   }
 
   /**
+   * gets referrals count
+   *
+   * @param  {Affiliate} affiliate
+   * @param  {Boolean}   month
+   *
+   * @return {Promise}
+   */
+  async _totals(affiliate, month) {
+    // return where
+    let total = Credit.where({
+      'affiliate.id' : affiliate.get('_id').toString()
+    });
+
+    // check where
+    if (month) total = total.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+    // return count
+    return await total.count();
+  }
+
+  /**
    * renders grid
    *
    * @return {grid}
    */
-  _grid(user) {
+  _grid(affiliate) {
     // create new grid
     const refferalGrid = new Grid();
 
@@ -296,7 +314,7 @@ class AffiliateController extends Controller {
     refferalGrid.route('/affiliate/grid');
 
     // set grid model
-    refferalGrid.model(credit);
+    refferalGrid.model(Credit);
 
     // add grid columns
     refferalGrid.column('_id', {
@@ -350,7 +368,7 @@ class AffiliateController extends Controller {
 
     // add refund grid
     refferalGrid.where({
-      'referrer.id' : user.get('_id').toString()
+      'affiliate.id' : affiliate.get('_id').toString()
     });
 
     // return grid

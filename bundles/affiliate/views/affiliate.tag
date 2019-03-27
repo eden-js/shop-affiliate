@@ -1,5 +1,5 @@
 <affiliate-page>
-  <div class="my-5 affiliate-page">
+  <div class="container container-affiliate py-5">
     <div class="row mb-4">
 
       <!-- earnings this month -->
@@ -46,10 +46,10 @@
               Total
             </h3>
             <p class="text-uppercase">
-              Total Paid / Total Discount
+              Total Paid
             </p>
             <h3 class="text-uppercase text-primary">
-              ${ (opts.orders || 0).toLocaleString() } / ${ (opts.discount || 0).toLocaleString() }
+              ${ (opts.orders || 0).toLocaleString() }
             </h3>
           </div>
         </div>
