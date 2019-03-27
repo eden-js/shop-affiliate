@@ -1,311 +1,521 @@
-/**
- * Created by Awesome on 3/5/2016.
- */
 
-// use strict
-'use strict';
+// Require dependencies
+const Grid        = require('grid');
+const config      = require('config');
+const Controller  = require('controller');
+const escapeRegex = require('escape-string-regexp');
 
-// require dependencies
-const grid       = require ('grid');
-const alert      = require ('alert');
-const moment     = require ('moment');
-const controller = require ('controller');
-
-// require local dependencies
-const user   = model ('user');
-const code   = model ('code');
-const credit = model ('credit');
+// Require models
+const Block     = model('block');
+const Affiliate = model('affiliate');
 
 // require helpers
-const balance = helper ('balance');
+const formHelper      = helper('form');
+const fieldHelper     = helper('form/field');
+const blockHelper     = helper('cms/block');
+const affiliateHelper = helper('affiliate');
 
 /**
- * build affiliate controller
+ * Build affiliate controller
  *
- * @acl   affiliate.admin
- * @fail  /
+ * @acl   admin
+ * @fail  next
  * @mount /admin/affiliate
  */
-class adminController extends controller {
+class AffiliateAdminController extends Controller {
   /**
-   * construct affiliate controller
-   *
-   * @param props
+   * Construct affiliate Admin Controller
    */
-  constructor () {
+  constructor() {
     // run super
-    super (...arguments);
+    super();
 
+    // bind build methods
+    this.build = this.build.bind(this);
+
+    // bind methods
+    this.gridAction = this.gridAction.bind(this);
+    this.indexAction = this.indexAction.bind(this);
+    this.createAction = this.createAction.bind(this);
+    this.updateAction = this.updateAction.bind(this);
+    this.removeAction = this.removeAction.bind(this);
+    this.createSubmitAction = this.createSubmitAction.bind(this);
+    this.updateSubmitAction = this.updateSubmitAction.bind(this);
+    this.removeSubmitAction = this.removeSubmitAction.bind(this);
+
+    // bind private methods
+    this._grid = this._grid.bind(this);
+
+    // set building
+    this.building = this.build();
   }
 
+
+  // ////////////////////////////////////////////////////////////////////////////
+  //
+  // BUILD METHODS
+  //
+  // ////////////////////////////////////////////////////////////////////////////
+
   /**
-   * set index
-   *
-   * @title  Affiliate
-   * @param  {Request}   req
-   * @param  {Response}  res
-   *
-   * @icon   fa fa-money-bill-wave
-   * @menu   {ADMIN} Affiliates
-   * @route  {get} /
-   * @layout admin
-   * @return {Promise}
+   * build affiliate admin controller
    */
-  async indexAction (req, res) {
-    // render
-    res.render ('affiliate/admin', {
-      'grid' : await this._grid ().render (req)
+  build() {
+    //
+    // REGISTER BLOCKS
+    //
+
+    // register simple block
+    blockHelper.block('admin.affiliate.grid', {
+      acl         : ['admin.affiliate'],
+      for         : ['admin'],
+      title       : 'Affiliate Grid',
+      description : 'Affiliate Grid block',
+    }, async (req, block) => {
+      // get notes block from db
+      const blockModel = await Block.findOne({
+        uuid : block.uuid,
+      }) || new Block({
+        uuid : block.uuid,
+        type : block.type,
+      });
+
+      // create new req
+      const fauxReq = {
+        query : blockModel.get('state') || {},
+      };
+
+      // return
+      return {
+        tag   : 'grid',
+        name  : 'Affiliate',
+        grid  : await (await this._grid(req)).render(fauxReq),
+        class : blockModel.get('class') || null,
+        title : blockModel.get('title') || '',
+      };
+    }, async (req, block) => {
+      // get notes block from db
+      const blockModel = await Block.findOne({
+        uuid : block.uuid,
+      }) || new Block({
+        uuid : block.uuid,
+        type : block.type,
+      });
+
+      // set data
+      blockModel.set('class', req.body.data.class);
+      blockModel.set('state', req.body.data.state);
+      blockModel.set('title', req.body.data.title);
+
+      // save block
+      await blockModel.save(req.user);
+    });
+
+    //
+    // REGISTER FIELDS
+    //
+
+    // register simple field
+    fieldHelper.field('admin.affiliate', {
+      for         : ['admin'],
+      title       : 'Affiliate',
+      description : 'Affiliate Field',
+    }, async (req, field, value) => {
+      // set tag
+      field.tag = 'affiliate';
+      field.value = value ? (Array.isArray(value) ? await Promise.all(value.map(item => item.sanitise())) : await value.sanitise()) : null;
+      // return
+      return field;
+    }, async (req, field) => {
+      // save field
+    }, async (req, field, value, old) => {
+      // set value
+      try {
+        // set value
+        value = JSON.parse(value);
+      } catch (e) {}
+
+      // check value
+      if (!Array.isArray(value)) value = [value];
+
+      // return value map
+      return await Promise.all((value || []).filter(val => val).map(async (val, i) => {
+        // run try catch
+        try {
+          // buffer affiliate
+          const affiliate = await Affiliate.findById(val);
+
+          // check affiliate
+          if (affiliate) return affiliate;
+
+          // return null
+          return null;
+        } catch (e) {
+          // return old
+          return old[i];
+        }
+      }));
+    });
+  }
+
+
+  // ////////////////////////////////////////////////////////////////////////////
+  //
+  // CRUD METHODS
+  //
+  // ////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Index action
+   *
+   * @param {Request}  req
+   * @param {Response} res
+   *
+   * @icon     fa fa-building
+   * @menu     {ADMIN} Affiliates
+   * @title    Affiliate Administration
+   * @route    {get} /
+   * @layout   admin
+   * @priority 10
+   */
+  async indexAction(req, res) {
+    // Render grid
+    res.render('affiliate/admin', {
+      grid : await (await this._grid(req)).render(req),
     });
   }
 
   /**
-   * add/edit action
+   * Add/edit action
    *
-   * @param req
-   * @param res
+   * @param {Request}  req
+   * @param {Response} res
    *
    * @route    {get} /create
    * @layout   admin
+   * @return   {*}
    * @priority 12
    */
-  createAction (req, res) {
-    // return update action
-    return this.updateAction (req, res);
+  createAction(req, res) {
+    // Return update action
+    return this.updateAction(req, res);
   }
 
   /**
-   * update action
+   * Update action
    *
-   * @param req
-   * @param res
+   * @param {Request} req
+   * @param {Response} res
    *
    * @route   {get} /:id/update
    * @layout  admin
    */
-  async updateAction (req, res) {
-    // set website variable
-    let Code   = new code ();
+  async updateAction(req, res) {
+    // Set website variable
+    let affiliate = new Affiliate();
     let create = true;
 
-    // check for website model
+    // Check for website model
     if (req.params.id) {
-      // load by id
-      Code   = await code.findById (req.params.id);
+      // Load by id
+      affiliate = await Affiliate.findById(req.params.id);
       create = false;
     }
 
-    // render page
-    res.render ('affiliate/admin/update', {
-      'code'  : await Code.sanitise (),
-      'title' : create ? 'Create Code' : 'Update ' + Code.get ('_id').toString (),
+    // get form
+    const form = await formHelper.get('edenjs.shop.affiliate');
+
+    // digest into form
+    const sanitised = await formHelper.render(req, form, await Promise.all(form.get('fields').map(async (field) => {
+      // return fields map
+      return {
+        uuid  : field.uuid,
+        value : await affiliate.get(field.name || field.uuid),
+      };
+    })));
+
+    // get form
+    if (!form.get('_id')) res.form('edenjs.shop.affiliate');
+
+    // Render page
+    res.render('affiliate/admin/update', {
+      item   : await affiliate.sanitise(),
+      form   : sanitised,
+      title  : create ? 'Create affiliate' : `Update ${affiliate.get('_id').toString()}`,
+      fields : config.get('shop.affiliate.fields'),
     });
   }
 
   /**
-   * create submit action
+   * Create submit action
    *
-   * @param req
-   * @param res
+   * @param {Request} req
+   * @param {Response} res
    *
    * @route   {post} /create
+   * @return  {*}
    * @layout  admin
+   * @upload  {single} image
    */
-  createSubmitAction (req, res) {
-    // return update action
-    return this.updateSubmitAction (req, res);
+  createSubmitAction(req, res) {
+    // Return update action
+    return this.updateSubmitAction(req, res);
   }
 
   /**
-   * add/edit action
+   * Add/edit action
    *
-   * @param req
-   * @param res
+   * @param {Request}  req
+   * @param {Response} res
+   * @param {Function} next
    *
    * @route   {post} /:id/update
    * @layout  admin
    */
-  async updateSubmitAction (req, res) {
-    // set website variable
-    let Code   = new code ();
+  async updateSubmitAction(req, res, next) {
+    // Set website variable
     let create = true;
+    let affiliate = new Affiliate();
 
-    // check for website model
+    // Check for website model
     if (req.params.id) {
-      // load by id
-      Code   = await code.findById (req.params.id);
+      // Load by id
+      affiliate = await Affiliate.findById(req.params.id);
       create = false;
     }
 
-    // set details
-    Code.set ('rate',     parseFloat (req.body.rate));
-    Code.set ('code',     req.body.code);
-    Code.set ('state',    req.body.state);
-    Code.set ('discount', parseFloat (req.body.discount));
+    // get form
+    const form = await formHelper.get('edenjs.shop.affiliate');
 
-    // save order
-    await Code.save ();
+    // digest into form
+    const fields = await formHelper.submit(req, form, await Promise.all(form.get('fields').map(async (field) => {
+      // return fields map
+      return {
+        uuid  : field.uuid,
+        value : await affiliate.get(field.name || field.uuid),
+      };
+    })));
 
-    // send alert
-    req.alert ('success', 'Successfully ' + (create ? 'Created' : 'Updated') + ' code!');
+    // loop fields
+    for (const field of fields) {
+      // set value
+      affiliate.set(field.name || field.uuid, field.value);
+    }
 
-    // render page
-    res.render ('affiliate/admin/update', {
-      'code'  : await Code.sanitise (),
-      'title' : create ? 'Create Affiliate' : 'Update ' + Code.get ('_id').toString (),
-    });
+    // Save affiliate
+    await affiliate.save(req.user);
+
+    // set id
+    req.params.id = affiliate.get('_id').toString();
+
+    // return update action
+    return this.updateAction(req, res, next);
   }
 
   /**
-   * delete action
+   * Delete action
    *
-   * @param req
-   * @param res
+   * @param {Request} req
+   * @param {Response} res
    *
    * @route   {get} /:id/remove
    * @layout  admin
    */
-  async removeAction (req, res) {
-    // set website variable
-    let Order = false;
+  async removeAction(req, res) {
+    // Set website variable
+    let affiliate = false;
 
-    // check for website model
+    // Check for website model
     if (req.params.id) {
-      // load user
-      Order = await order.findById (req.params.id);
+      // Load user
+      affiliate = await Affiliate.findById(req.params.id);
     }
 
-    // render page
-    res.render ('order/admin/remove', {
-      'title': 'Remove ' + Order.get ('_id').toString (),
-      'order' : await Order.sanitise ()
+    // Render page
+    res.render('affiliate/admin/remove', {
+      item  : await affiliate.sanitise(),
+      title : `Remove ${affiliate.get('_id').toString()}`,
     });
   }
 
   /**
-   * delete action
+   * Delete action
    *
-   * @param req
-   * @param res
+   * @param {Request} req
+   * @param {Response} res
    *
    * @route   {post} /:id/remove
-   * @title   order Administration
+   * @title   Remove Affiliate
    * @layout  admin
    */
-  async removeSubmitAction (req, res) {
-    // set website variable
-    let Order = false;
+  async removeSubmitAction(req, res) {
+    // Set website variable
+    let affiliate = false;
 
-    // check for website model
+    // Check for website model
     if (req.params.id) {
-      // load user
-      Order = await order.findById (req.params.id);
+      // Load user
+      affiliate = await Affiliate.findById(req.params.id);
     }
 
-    // delete website
-    await Order.remove ();
+    // Alert Removed
+    req.alert('success', `Successfully removed ${affiliate.get('_id').toString()}`);
 
-    // alert Removed
-    req.alert ('success', 'Successfully removed ' + (Order.get ('_id').toString ()));
+    // Delete website
+    await affiliate.remove(req.user);
 
-    // render index
-    return this.indexAction (req, res);
+    // Render index
+    return this.indexAction(req, res);
   }
 
+
+  // ////////////////////////////////////////////////////////////////////////////
+  //
+  // QUERY METHODS
+  //
+  // ////////////////////////////////////////////////////////////////////////////
+
   /**
-   * user grid action
+   * index action
    *
    * @param req
    * @param res
    *
-   * @route {post} /grid
+   * @acl   admin
+   * @fail  next
+   * @route {GET} /query
    */
-  gridAction (req, res) {
-    // return post grid request
-    return this._grid ().post (req, res);
+  async queryAction(req, res) {
+    // find children
+    let affiliates = await Affiliate;
+
+    // set query
+    if (req.query.q) {
+      affiliates = affiliates.where({
+        name : new RegExp(escapeRegex(req.query.q || ''), 'i'),
+      });
+    }
+
+    // add roles
+    affiliates = await affiliates.skip(((parseInt(req.query.page, 10) || 1) - 1) * 20).limit(20).sort('name', 1)
+      .find();
+
+    // get children
+    res.json((await Promise.all(affiliates.map(affiliate => affiliate.sanitise()))).map((sanitised) => {
+      // return object
+      return {
+        text  : sanitised.name,
+        data  : sanitised,
+        value : sanitised.id,
+      };
+    }));
+  }
+
+
+  // ////////////////////////////////////////////////////////////////////////////
+  //
+  // GRID METHODS
+  //
+  // ////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * User grid action
+   *
+   * @param {Request} req
+   * @param {Response} res
+   *
+   * @route  {post} /grid
+   * @return {*}
+   */
+  async gridAction(req, res) {
+    // Return post grid request
+    return (await this._grid(req)).post(req, res);
   }
 
   /**
-   * renders grid
+   * Renders grid
+   *
+   * @param {Request} req
    *
    * @return {grid}
    */
-  _grid () {
-    // create new grid
-    let codeGrid = new grid ();
+  async _grid(req) {
+    // Create new grid
+    const affiliateGrid = new Grid();
 
-    // set route
-    codeGrid.route ('/admin/affiliate/grid');
+    // Set route
+    affiliateGrid.route('/admin/affiliate/grid');
 
-    // set grid model
-    codeGrid.model (code);
+    // get form
+    const form = await formHelper.get('edenjs.shop.affiliate');
 
-    // add grid columns
-    codeGrid.column ('_id', {
-      'title'  : 'ID',
-      'format' : async (col) => {
-        return col ? col.toString () : 'N/A';
-      }
-    }).column ('user', {
-      'title'  : 'User',
-      'format' : async (col) => {
-        return col ? col.get ('username') : 'N/A';
-      }
-    }).column ('state', {
-      'sort'   : true,
-      'title'  : 'State',
-      'format' : async (col) => {
-        // get paid
-        return '<span class="btn btn-sm btn-' + (col === 'active' ? 'success' : (col === 'rejected' ? 'danger' : 'info')) + '">' + col + '</span>';
-      }
-    }).column ('code', {
-      'sort'   : true,
-      'title'  : 'Code',
-      'format' : async (col) => {
-        // get paid
-        return col || '<i>N/A</i>';
-      }
-    }).column ('value', {
-      'sort'   : true,
-      'title'  : 'Value',
-      'format' : async (col, row) => {
-        return '$' + (await credit.where({
-          'code.id' : row.get('_id').toString()
-        }).sum('amount')).toFixed(2);
-      }
-    }).column ('created_at', {
-      'sort'   : true,
-      'title'  : 'Created',
-      'format' : async (col) => {
-        return col.toLocaleDateString ('en-GB', {
-          'day'   : 'numeric',
-          'month' : 'short',
-          'year'  : 'numeric'
-        });
-      }
-    }).column ('actions', {
-      'title'  : 'Actions',
-      'width'  : '1%',
-      'format' : async (col, row) => {
-        return [
-          '<div class="btn-group btn-group-sm" role="group">',
-            '<a href="/admin/affiliate/' + row.get ('_id').toString () + '/update" class="btn btn-primary"><i class="fa fa-pencil"></i></a>',
-            '<a href="/admin/affiliate/' + row.get ('_id').toString () + '/remove" class="btn btn-danger"><i class="fa fa-times"></i></a>',
-          '</div>'
-        ].join ('');
-      }
+    // Set grid model
+    affiliateGrid.id('edenjs.shop.affiliate');
+    affiliateGrid.model(Affiliate);
+    affiliateGrid.models(true);
+
+    // Add grid columns
+    affiliateGrid.column('_id', {
+      sort     : true,
+      title    : 'Id',
+      priority : 100,
     });
 
-    // set default sort order
-    codeGrid.sort ('created_at', 1);
+    // branch fields
+    await Promise.all((form.get('_id') ? form.get('fields') : config.get('shop.affiliate.fields').slice(0)).map(async (field, i) => {
+      // set found
+      const found = config.get('shop.affiliate.fields').find(f => f.name === field.name);
 
-    // return grid
-    return codeGrid;
+      // add config field
+      await formHelper.column(req, form, affiliateGrid, field, {
+        hidden   : !(found && found.grid),
+        priority : 100 - i,
+      });
+    }));
+
+    // add extra columns
+    affiliateGrid.column('updated_at', {
+      tag      : 'grid-date',
+      sort     : true,
+      title    : 'Updated',
+      priority : 4,
+    }).column('created_at', {
+      tag      : 'grid-date',
+      sort     : true,
+      title    : 'Created',
+      priority : 3,
+    }).column('actions', {
+      tag      : 'affiliate-actions',
+      type     : false,
+      width    : '1%',
+      title    : 'Actions',
+      priority : 1,
+    });
+
+    // branch filters
+    config.get('shop.affiliate.fields').slice(0).filter(field => field.grid).forEach((field) => {
+      // add config field
+      affiliateGrid.filter(field.name, {
+        type  : 'text',
+        title : field.label,
+        query : (param) => {
+          // Another where
+          affiliateGrid.match(field.name, new RegExp(escapeRegex(param.toString().toLowerCase()), 'i'));
+        },
+      });
+    });
+
+    // Set default sort order
+    affiliateGrid.sort('created_at', 1);
+
+    // Return grid
+    return affiliateGrid;
   }
 }
 
 /**
- * export affiliate controller
+ * Export affiliate controller
  *
- * @type {adminController}
+ * @type {AffiliateAdminController}
  */
-module.exports = adminController;
+module.exports = AffiliateAdminController;

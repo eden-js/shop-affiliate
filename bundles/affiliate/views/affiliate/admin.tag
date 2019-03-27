@@ -1,10 +1,18 @@
 <affiliate-admin-page>
-  <div class="affiliate-admin">
-    <div class="btn-toolbar mb-5" role="toolbar" aria-label="Toolbar with button groups">
-      <div class="btn-group mr-2" role="group" aria-label="First group">
-        <a href="/admin/affiliate/create" class="btn btn-success">Create Code</a>
-      </div>
+  <div class="page page-fundraiser">
+
+    <admin-header title="Manage Affiliates">
+      <yield to="right">
+        <a href="/admin//affiliate/affiliate/create" class="btn btn-lg btn-success">
+          <i class="fa fa-plus ml-2"></i> Create Affiliate
+        </a>
+      </yield>
+    </admin-header>
+    
+    <div class="container-fluid">
+    
+      <grid ref="grid" grid={ opts.grid } table-class="table table-striped table-bordered" title="Affiliate Grid" />
+    
     </div>
-    <grid grid={ opts.grid } table-class="table table-sm table-striped table-bordered" title="Affiliate Codes" />
   </div>
 </affiliate-admin-page>
