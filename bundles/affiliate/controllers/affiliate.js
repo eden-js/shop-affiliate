@@ -199,6 +199,161 @@ class AffiliateController extends Controller {
     // redirect home
     res.redirect(req.query.r || req.query.redirect || '/');
   }
+
+  /**
+   * set index
+   *
+   * @title  Affiliate
+   * @param  {Request}   req
+   * @param  {Response}  res
+   *
+   * @acl    true
+   * @fail   /login
+   * @route  {get} /affiliate
+   * @layout no-user
+   * @return {Promise}
+   */
+  async indexAction (req, res) {
+    // check pending
+    const affiliate = await Affiliate.findOne({
+      'user.id' : req.user.get('_id').toString()
+    });
+
+    // get codes
+    const codes = await Code.find({
+      'state'   : 'active',
+      'user.id' : req.user.get('_id').toString()
+    });
+
+    // render
+    res.render('affiliate', {
+      'grid'    : await this._grid(req.user).render(req),
+      'codes'   : await Promise.all(codes.map((code) => code.sanitise())),
+      'credits' : {
+        'all'   : await this._credits(req.user),
+        'month' : await this._credits(req.user, true)
+      },
+      'totals' : {
+        'all'   : await this._totals(req.user),
+        'month' : await this._totals(req.user, true)
+      },
+      'discount' : await credit.where({
+        'referrer.id' : req.user.get('_id').toString()
+      }).sum('discount'),
+      'orders' : await credit.where({
+        'referrer.id' : req.user.get('_id').toString()
+      }).sum('total')
+    });
+  }
+
+  /**
+   * user grid action
+   *
+   * @param req
+   * @param res
+   *
+   * @acl    true
+   * @fail   /
+   * @route {post} /affiliate/grid
+   */
+  gridAction (req, res) {
+    // return post grid request
+    return await (this._grid(req.user)).post(req, res);
+  }
+
+  /**
+   * returns total case opens value
+   *
+   * @param  {user}  User
+   *
+   * @return {Promise}
+   */
+  async _credits(user, month) {
+    // get total
+    let total = Credit.where({
+      'referrer.id' : user.get('_id').toString()
+    });
+
+    // check month
+    if (total) total.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+    // total
+    return await total.sum('amount');
+  }
+
+  /**
+   * renders grid
+   *
+   * @return {grid}
+   */
+  _grid(user) {
+    // create new grid
+    const refferalGrid = new Grid();
+
+    // set route
+    refferalGrid.route('/affiliate/grid');
+
+    // set grid model
+    refferalGrid.model(credit);
+
+    // add grid columns
+    refferalGrid.column('_id', {
+      'title'  : 'ID',
+      'format' : async (col) => {
+        return col ? col.toString() : 'N/A';
+      }
+    }).column('code', {
+      'sort'   : true,
+      'title'  : 'Code',
+      'format' : async (col) => {
+        return col ? col.get('code') : 'N/A';
+      }
+    }).column('user', {
+      'title'  : 'User',
+      'format' : async (col) => {
+        return col ? col.get('username') : 'N/A';
+      }
+    }).column('total', {
+      'sort'   : true,
+      'title'  : 'Order Total',
+      'format' : async (col) => {
+        return col ? '$' + parseFloat(col).toFixed(2) : 'N/A';
+      }
+    }).column('discount', {
+      'sort'   : true,
+      'title'  : 'Discount',
+      'format' : async (col) => {
+        return col ? '$' + parseFloat(col).toFixed(2) : 'N/A';
+      }
+    }).column('amount', {
+      'sort'   : true,
+      'title'  : 'Affiliate',
+      'format' : async (col) => {
+        return col ? '$' + parseFloat(col).toFixed(2) : 'N/A';
+      }
+    }).column('created_at', {
+      'sort'   : true,
+      'title'  : 'Created',
+      'format' : async (col) => {
+        return col.toLocaleDateString('en-GB', {
+          'day'   : 'numeric',
+          'month' : 'short',
+          'year'  : 'numeric'
+        });
+      }
+    });
+
+    // set default sort order
+    refferalGrid.sort('created_at', 1);
+
+    // add refund grid
+    refferalGrid.where({
+      'referrer.id' : user.get('_id').toString()
+    });
+
+    // return grid
+    return refferalGrid;
+  }
 }
 
 /**
