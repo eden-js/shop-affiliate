@@ -16,7 +16,7 @@ config.shop.affiliate = {
     {
       name  : 'user',
       grid  : true,
-      type  : 'user',
+      type  : 'admin.user',
       label : 'User',
     },
     {

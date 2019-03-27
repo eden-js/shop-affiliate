@@ -35,10 +35,10 @@ class Affiliate extends Model {
     };
 
     // get form
-    const form = await formHelper.get('edenjs.affiliate');
+    const form = await formHelper.get('edenjs.shop.affiliate');
 
     // add other fields
-    await Promise.all((form.get('_id') ? form.get('fields') : config.get('edenjs.affiliate.fields').slice(0)).map(async (field, i) => {
+    await Promise.all((form.get('_id') ? form.get('fields') : config.get('shop.affiliate.fields').slice(0)).map(async (field, i) => {
       // set field name
       const fieldName = field.name || field.uuid;
 
