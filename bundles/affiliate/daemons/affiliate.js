@@ -8,7 +8,7 @@ const affiliateHelper = helper('affiliate');
 /**
  * extend affiliate Daemon
  *
- * @compute
+ * @cluster back
  *
  * @extends {Daemon}
  */

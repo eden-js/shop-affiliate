@@ -8,6 +8,12 @@ if (!config.shop) config.shop = {};
 config.shop.affiliate = {
   fields : [
     {
+      name  : 'active',
+      grid  : true,
+      type  : 'boolean',
+      label : 'Active',
+    },
+    {
       name  : 'name',
       grid  : true,
       type  : 'text',
