@@ -227,6 +227,12 @@ class AffiliateAdminController extends Controller {
     // get controller
     const affiliateController = await this.eden.controller('affiliate/controllers/affiliate');
 
+    // create grid
+    const grid = await affiliateController._grid(req, affiliate);
+
+    // check create
+    if (!create) grid.route(`/admin/affiliate/${affiliate.get('_id').toString()}/grid`)
+
     // get form
     const form = await formHelper.get('edenjs.shop.affiliate');
 
@@ -246,7 +252,7 @@ class AffiliateAdminController extends Controller {
     res.render('affiliate/admin/update', {
       item    : await affiliate.sanitise(),
       form    : sanitised,
-      grid    : create ? null : await (await affiliateController._grid(affiliate)).render(req),
+      grid    : create ? null : await grid.render(req),
       title   : create ? 'Create affiliate' : `Update ${affiliate.get('_id').toString()}`,
       fields  : config.get('shop.affiliate.fields'),
       credits : {
@@ -463,6 +469,32 @@ class AffiliateAdminController extends Controller {
   async gridAction(req, res) {
     // Return post grid request
     return (await this._grid(req)).post(req, res);
+  }
+
+  /**
+   * User grid action
+   *
+   * @param {Request} req
+   * @param {Response} res
+   *
+   * @route  {post} /:id/grid
+   * @return {*}
+   */
+  async affiliateGridAction(req, res) {
+    // Set website variable
+    let affiliate = null;
+
+    // Check for website model
+    if (req.params.id) {
+      // Load user
+      affiliate = await Affiliate.findById(req.params.id);
+    }
+
+    // get controller
+    const affiliateController = await this.eden.controller('affiliate/controllers/affiliate');
+
+    // Return post grid request
+    return (await affiliateController._grid(req, affiliate)).post(req, res);
   }
 
   /**

@@ -1,6 +1,7 @@
 
 // import dependencies
 const Daemon = require('daemon');
+const config = require('config');
 
 // require models
 const Credit = model('affiliateCredit');
@@ -35,6 +36,9 @@ class AllAffiliateDaemon extends Daemon {
   async build() {
     // pre complete order
     this.eden.pre('order.complete', async (order) => {
+      // check order
+      if (await order.get('affiliate')) return;
+
       // get user
       const user = await order.get('user');
       const products = await order.get('products');
@@ -46,8 +50,8 @@ class AllAffiliateDaemon extends Daemon {
       // check affiliate
       if (affiliate.get('active') !== true) return;
 
-      // check affiliate percentage
-      if (!affiliate.get('percentage')) return;
+      // set affiliate user
+      const affiliateUser = Array.isArray(await affiliate.get('user')) ? (await affiliate.get('user'))[0] : await affiliate.get('user');
 
       // add credit
       const credit = new Credit({
@@ -55,8 +59,7 @@ class AllAffiliateDaemon extends Daemon {
         order,
         affiliate,
 
-        lines  : await order.get('lines'),
-        amount : parseFloat((await order.get('lines')).reduce((accum, line) => {
+        amount : parseFloat(order.get('lines').reduce((accum, line) => {
           // get product
           const product = products.find(p => p.get('_id').toString() === line.product);
 
@@ -64,9 +67,15 @@ class AllAffiliateDaemon extends Daemon {
           if (!product) return accum;
 
           // check product
-          return parseFloat(((line.total || 0) * ((affiliate.get(`rates.${product.get('type')}`) || 0) / 100)).toFixed(2)) + accum;
+          line.affiliate = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}`) || config.get('shop.affiliate') || 0, 10) / 100)).toFixed(2)) || 0;
+
+          // return added
+          return line.affiliate + accum;
         }, 0)),
       });
+
+      // get lines
+      credit.set('lines', order.get('lines'));
 
       // save credit
       await credit.save();
@@ -89,7 +98,7 @@ class AllAffiliateDaemon extends Daemon {
       await order.save();
 
       // add to balance
-      await balanceHelper.add((await affiliate.get('user')), credit.get('amount'));
+      await balanceHelper.add(affiliateUser, credit.get('amount'));
     });
   }
 }

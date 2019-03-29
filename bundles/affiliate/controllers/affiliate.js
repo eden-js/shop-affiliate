@@ -7,7 +7,8 @@ const escapeRegex = require('escape-string-regexp');
 // Require models
 const Code      = model('affiliateCode');
 const User      = model('user');
-const Credit    = model('credit');
+const Credit    = model('affiliateCredit');
+const Product   = model('product');
 const Affiliate = model('affiliate');
 
 // require helpers
@@ -228,7 +229,7 @@ class AffiliateController extends Controller {
 
     // render
     res.render('affiliate', {
-      grid    : await (await this._grid(affiliate)).render(req),
+      grid    : await (await this._grid(req, affiliate)).render(req),
       codes   : await Promise.all(codes.map(code => code.sanitise())),
       credits : {
         all   : await this._credits(affiliate),
@@ -255,8 +256,13 @@ class AffiliateController extends Controller {
    * @route {post} /affiliate/grid
    */
   async gridAction(req, res) {
+    // check pending
+    const affiliate = await Affiliate.findOne({
+      'user.id' : req.user.get('_id').toString(),
+    });
+
     // return post grid request
-    return await (this._grid(req.user)).post(req, res);
+    return await (this._grid(req, affiliate)).post(req, res);
   }
 
   /**
@@ -306,52 +312,74 @@ class AffiliateController extends Controller {
    *
    * @return {grid}
    */
-  _grid(affiliate) {
+  _grid(req, affiliate) {
     // create new grid
-    const refferalGrid = new Grid();
+    const creditGrid = new Grid();
 
     // set route
-    refferalGrid.route('/affiliate/grid');
+    creditGrid.route('/affiliate/grid');
 
     // set grid model
-    refferalGrid.model(Credit);
+    creditGrid.model(Credit);
 
     // add grid columns
-    refferalGrid.column('_id', {
+    creditGrid.column('_id', {
       title  : 'ID',
       format : async (col) => {
         return col ? col.toString() : 'N/A';
       },
-    }).column('code', {
-      sort   : true,
-      title  : 'Code',
-      format : async (col) => {
-        return col ? col.get('code') : 'N/A';
-      },
     }).column('user', {
+      sort   : true,
       title  : 'User',
       format : async (col) => {
-        return col ? col.get('username') : 'N/A';
+        return col ? col.name() : 'N/A';
       },
-    }).column('total', {
+    }).column('amount', {
       sort   : true,
-      title  : 'Order Total',
+      title  : 'Affiliate Amount',
       format : async (col) => {
         return col ? `$${parseFloat(col).toFixed(2)}` : 'N/A';
       },
     })
-      .column('discount', {
+      .column('order', {
         sort   : true,
-        title  : 'Discount',
+        title  : 'Order Total',
         format : async (col) => {
-          return col ? `$${parseFloat(col).toFixed(2)}` : 'N/A';
+          // get invoice
+          const invoice = col ? await col.get('invoice') : null;
+
+          // return value
+          return invoice ? `$${parseFloat(invoice.get('total')).toFixed(2)}` : 'N/A';
         },
       })
-      .column('amount', {
+      .column('lines', {
         sort   : true,
-        title  : 'Affiliate',
-        format : async (col) => {
-          return col ? `$${parseFloat(col).toFixed(2)}` : 'N/A';
+        title  : 'Lines',
+        format : async (col, row) => {
+          // get invoice
+          const lines = await row.get('lines');
+
+          // get products
+          return (await Promise.all(lines.map(async (line) => {
+            // get product
+            const product = await Product.findById(line.product);
+
+            // return value
+            return `${line.qty || 1}x <a href="/product/${product.get('sku')}" target="_blank">${product.get(`title.${req.language}`)}</a>`;
+          }))).join(',<br>');
+        },
+        export : async (col, row) => {
+          // get invoice
+          const lines = await row.get('lines');
+
+          // get products
+          return (await Promise.all(lines.map(async (line) => {
+            // get product
+            const product = await Product.findById(line.product);
+
+            // return value
+            return `${line.qty || 1}x ${product.get(`title.${req.language}`)}`;
+          }))).join(', ');
         },
       })
       .column('created_at', {
@@ -367,15 +395,15 @@ class AffiliateController extends Controller {
       });
 
     // set default sort order
-    refferalGrid.sort('created_at', 1);
+    creditGrid.sort('created_at', -1);
 
     // add refund grid
-    refferalGrid.where({
+    creditGrid.where({
       'affiliate.id' : affiliate.get('_id').toString(),
     });
 
     // return grid
-    return refferalGrid;
+    return creditGrid;
   }
 }
 
