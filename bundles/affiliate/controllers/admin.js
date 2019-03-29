@@ -6,6 +6,7 @@ const Controller  = require('controller');
 const escapeRegex = require('escape-string-regexp');
 
 // Require models
+const Code      = model('affiliateCode');
 const Block     = model('block');
 const Credit    = model('affiliateCredit');
 const Affiliate = model('affiliate');
@@ -245,6 +246,12 @@ class AffiliateAdminController extends Controller {
       };
     })));
 
+    // get codes
+    const codes = create ? [] : await Code.find({
+      state          : 'active',
+      'affiliate.id' : affiliate.get('_id').toString(),
+    });
+
     // get form
     if (!form.get('_id')) res.form('edenjs.shop.affiliate');
 
@@ -254,6 +261,7 @@ class AffiliateAdminController extends Controller {
       form    : sanitised,
       grid    : create ? null : await grid.render(req),
       title   : create ? 'Create affiliate' : `Update ${affiliate.get('_id').toString()}`,
+      codes   : await Promise.all(codes.map(code => code.sanitise())),
       fields  : config.get('shop.affiliate.fields'),
       credits : {
         all   : create ? 0 : await this._credits(affiliate),

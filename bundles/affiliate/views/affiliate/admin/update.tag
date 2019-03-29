@@ -127,6 +127,11 @@
                     Credits
                   </a>
                 </li>
+                <li class="nav-item">
+                  <a class={ 'nav-link' : true, 'active' : this.tab === 'codes', 'disabled' : !opts.item.id } href="#" disabled={ !opts.item.id } onclick={ opts.item.id ? onCodes : null }>
+                    Codes
+                  </a>
+                </li>
               </ul>
             </div>
             
