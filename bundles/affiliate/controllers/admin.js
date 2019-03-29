@@ -14,6 +14,7 @@ const Affiliate = model('affiliate');
 const formHelper      = helper('form');
 const fieldHelper     = helper('form/field');
 const blockHelper     = helper('cms/block');
+const productHelper   = helper('product');
 const affiliateHelper = helper('affiliate');
 
 /**
@@ -259,6 +260,19 @@ class AffiliateAdminController extends Controller {
       orders : create ? 0 : await Credit.where({
         'affiliate.id' : affiliate.get('_id').toString(),
       }).sum('total'),
+      types : await Promise.all(productHelper.products().map(async (p) => {
+        // sanitised
+        const prod = {
+          type : p.type,
+          opts : p.opts,
+        };
+
+        // await hook
+        await this.eden.hook('product.admin.sanitise', prod);
+
+        // return sanitised product
+        return prod;
+      })),
     });
   }
 
@@ -300,22 +314,28 @@ class AffiliateAdminController extends Controller {
       create = false;
     }
 
-    // get form
-    const form = await formHelper.get('edenjs.shop.affiliate');
+    // check type of submit
+    if (req.body.rates) {
+      // set rates
+      affiliate.set('rates', req.body.rates);
+    } else {
+      // get form
+      const form = await formHelper.get('edenjs.shop.affiliate');
 
-    // digest into form
-    const fields = await formHelper.submit(req, form, await Promise.all(form.get('fields').map(async (field) => {
-      // return fields map
-      return {
-        uuid  : field.uuid,
-        value : await affiliate.get(field.name || field.uuid),
-      };
-    })));
+      // digest into form
+      const fields = await formHelper.submit(req, form, await Promise.all(form.get('fields').map(async (field) => {
+        // return fields map
+        return {
+          uuid  : field.uuid,
+          value : await affiliate.get(field.name || field.uuid),
+        };
+      })));
 
-    // loop fields
-    for (const field of fields) {
-      // set value
-      affiliate.set(field.name || field.uuid, field.value);
+      // loop fields
+      for (const field of fields) {
+        // set value
+        affiliate.set(field.name || field.uuid, field.value);
+      }
     }
 
     // Save affiliate

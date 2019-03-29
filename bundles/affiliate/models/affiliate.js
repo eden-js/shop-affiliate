@@ -30,6 +30,7 @@ class Affiliate extends Model {
     // return object
     const sanitised = {
       id         : this.get('_id') ? this.get('_id').toString() : null,
+      rates      : this.get('rates'),
       created_at : this.get('created_at'),
       updated_at : this.get('updated_at'),
     };
