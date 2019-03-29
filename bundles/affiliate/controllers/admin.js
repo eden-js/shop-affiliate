@@ -223,6 +223,9 @@ class AffiliateAdminController extends Controller {
       create = false;
     }
 
+    // get controller
+    const affiliateController = await this.eden.controller('affiliate/controllers/affiliate');
+
     // get form
     const form = await formHelper.get('edenjs.shop.affiliate');
 
@@ -242,6 +245,7 @@ class AffiliateAdminController extends Controller {
     res.render('affiliate/admin/update', {
       item    : await affiliate.sanitise(),
       form    : sanitised,
+      grid    : create ? null : await (await affiliateController._grid(affiliate)).render(req),
       title   : create ? 'Create affiliate' : `Update ${affiliate.get('_id').toString()}`,
       fields  : config.get('shop.affiliate.fields'),
       credits : {

@@ -109,7 +109,7 @@
           </div>
           
           
-          <div class="card">
+          <div class="card mb-4">
             <div class="card-body">
               <form-render action="/admin/affiliate/{ opts.item && opts.item.id ? opts.item.id + '/update' : 'create' }" method="post" ref="form" form={ opts.form } placement="edenjs.shop.affiliate" positions={ this.positions } preview={ this.preview } class="d-block mb-3" />
             </div>
@@ -117,6 +117,15 @@
               <button type="button" onclick={ onSubmit } class={ 'btn btn-success' : true, 'disabled' : this.loading } disabled={ this.loading }>
                 { this.loading ? 'Submitting...' : 'Submit' }
               </button>
+            </div>
+          </div>
+      
+          <div class="card" if={ this.user }>
+            <div class="card-header">
+              Affiliate Credits
+            </div>
+            <div class="card-body">
+              <grid grid={ opts.grid } table-class="table table-striped table-bordered" title="Affiliate Credits" />
             </div>
           </div>
         </div>
