@@ -15,16 +15,16 @@
     <div class="container-fluid">
       <div class="row row-eq-height">
       
-        <div class="col-xl-3 col-lg-4">
+        <div class="col-xl-3 col-lg-4" if={ this.user }>
           <div class="card">
             <div class="card-body">
               <div class="text-center">
-                <media-img if={ opts.item.image } image={ Array.isArray(this.user.avatar) ? this.user.avatar[0] : this.user.avatar } label="1x-sq" classes="w-50 img-fluid rounded-circle img-avatar mb-4" />
+                <media-img if={ this.user.avatar } image={ Array.isArray(this.user.avatar) ? this.user.avatar[0] : this.user.avatar } label="1x-sq" classes="w-50 img-fluid rounded-circle img-avatar mb-4" />
                 <h2>
                   { this.user.username || this.user.email }
                 </h2>
                 <p class="text-muted m-0">
-                  Member for: { getDate(this.user.created_at) }
+                  { opts.item.name } | Member for: { getDate(this.user.created_at) }
                 </p>
               </div>
             </div>
@@ -32,7 +32,7 @@
         </div>
         
         <div class="col">
-          <div class="row mb-4">
+          <div class="row mb-4" if={ this.user }>
 
             <!-- earnings this month -->
             <div class="col-3">
