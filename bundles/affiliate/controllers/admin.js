@@ -7,6 +7,7 @@ const escapeRegex = require('escape-string-regexp');
 
 // Require models
 const Block     = model('block');
+const Credit    = model('affiliateCredit');
 const Affiliate = model('affiliate');
 
 // require helpers
@@ -239,10 +240,21 @@ class AffiliateAdminController extends Controller {
 
     // Render page
     res.render('affiliate/admin/update', {
-      item   : await affiliate.sanitise(),
-      form   : sanitised,
-      title  : create ? 'Create affiliate' : `Update ${affiliate.get('_id').toString()}`,
-      fields : config.get('shop.affiliate.fields'),
+      item    : await affiliate.sanitise(),
+      form    : sanitised,
+      title   : create ? 'Create affiliate' : `Update ${affiliate.get('_id').toString()}`,
+      fields  : config.get('shop.affiliate.fields'),
+      credits : {
+        all   : create ? 0 : await this._credits(affiliate),
+        month : create ? 0 : await this._credits(affiliate, true),
+      },
+      totals : {
+        all   : create ? 0 : await this._totals(affiliate),
+        month : create ? 0 : await this._totals(affiliate, true),
+      },
+      orders : create ? 0 : await Credit.where({
+        'affiliate.id' : affiliate.get('_id').toString(),
+      }).sum('total'),
     });
   }
 
@@ -305,11 +317,8 @@ class AffiliateAdminController extends Controller {
     // Save affiliate
     await affiliate.save(req.user);
 
-    // set id
-    req.params.id = affiliate.get('_id').toString();
-
     // return update action
-    return this.updateAction(req, res, next);
+    return res.redirect(`/admin/affiliate/${affiliate.get('_id').toString()}/update`);
   }
 
   /**
@@ -430,6 +439,48 @@ class AffiliateAdminController extends Controller {
   async gridAction(req, res) {
     // Return post grid request
     return (await this._grid(req)).post(req, res);
+  }
+
+  /**
+   * returns total case opens value
+   *
+   * @param  {Affiliate} affiliate
+   * @param  {Boolean}   month
+   *
+   * @return {Promise}
+   */
+  async _credits(affiliate, month) {
+    // get total
+    const total = Credit.where({
+      'affiliate.id' : affiliate.get('_id').toString(),
+    });
+
+    // check month
+    if (month) total.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+    // total
+    return await total.sum('amount');
+  }
+
+  /**
+   * gets referrals count
+   *
+   * @param  {Affiliate} affiliate
+   * @param  {Boolean}   month
+   *
+   * @return {Promise}
+   */
+  async _totals(affiliate, month) {
+    // return where
+    let total = Credit.where({
+      'affiliate.id' : affiliate.get('_id').toString(),
+    });
+
+    // check where
+    if (month) total = total.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+    // return count
+    return await total.count();
   }
 
   /**

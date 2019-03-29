@@ -194,7 +194,7 @@ class AffiliateController extends Controller {
     } else {
       // set cookie
       res.cookie('affiliate', affiliate.get('_id').toString(), {
-        'maxAge' : 24 * 60 * 60 * 1000,
+        maxAge : 24 * 60 * 60 * 1000,
       });
     }
 
@@ -214,33 +214,33 @@ class AffiliateController extends Controller {
    * @route  {get} /affiliate
    * @return {Promise}
    */
-  async indexAction (req, res) {
+  async indexAction(req, res) {
     // check pending
     const affiliate = await Affiliate.findOne({
-      'user.id' : req.user.get('_id').toString()
+      'user.id' : req.user.get('_id').toString(),
     });
 
     // get codes
     const codes = await Code.find({
-      'state'   : 'active',
-      'user.id' : req.user.get('_id').toString()
+      state     : 'active',
+      'user.id' : req.user.get('_id').toString(),
     });
 
     // render
     res.render('affiliate', {
-      'grid'    : await (await this._grid(affiliate)).render(req),
-      'codes'   : await Promise.all(codes.map((code) => code.sanitise())),
-      'credits' : {
-        'all'   : await this._credits(affiliate),
-        'month' : await this._credits(affiliate, true)
+      grid    : await (await this._grid(affiliate)).render(req),
+      codes   : await Promise.all(codes.map(code => code.sanitise())),
+      credits : {
+        all   : await this._credits(affiliate),
+        month : await this._credits(affiliate, true),
       },
-      'totals' : {
-        'all'   : await this._totals(affiliate),
-        'month' : await this._totals(affiliate, true)
+      totals : {
+        all   : await this._totals(affiliate),
+        month : await this._totals(affiliate, true),
       },
-      'orders' : await Credit.where({
-        'affiliate.id' : affiliate.get('_id').toString()
-      }).sum('total')
+      orders : await Credit.where({
+        'affiliate.id' : affiliate.get('_id').toString(),
+      }).sum('total'),
     });
   }
 
@@ -254,7 +254,7 @@ class AffiliateController extends Controller {
    * @fail   /
    * @route {post} /affiliate/grid
    */
-  gridAction (req, res) {
+  async gridAction(req, res) {
     // return post grid request
     return await (this._grid(req.user)).post(req, res);
   }
@@ -269,12 +269,12 @@ class AffiliateController extends Controller {
    */
   async _credits(affiliate, month) {
     // get total
-    let total = Credit.where({
-      'affiliate.id' : affiliate.get('_id').toString()
+    const total = Credit.where({
+      'affiliate.id' : affiliate.get('_id').toString(),
     });
 
     // check month
-    if (total) total.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    if (month) total.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
     // total
     return await total.sum('amount');
@@ -291,7 +291,7 @@ class AffiliateController extends Controller {
   async _totals(affiliate, month) {
     // return where
     let total = Credit.where({
-      'affiliate.id' : affiliate.get('_id').toString()
+      'affiliate.id' : affiliate.get('_id').toString(),
     });
 
     // check where
@@ -318,57 +318,60 @@ class AffiliateController extends Controller {
 
     // add grid columns
     refferalGrid.column('_id', {
-      'title'  : 'ID',
-      'format' : async (col) => {
+      title  : 'ID',
+      format : async (col) => {
         return col ? col.toString() : 'N/A';
-      }
+      },
     }).column('code', {
-      'sort'   : true,
-      'title'  : 'Code',
-      'format' : async (col) => {
+      sort   : true,
+      title  : 'Code',
+      format : async (col) => {
         return col ? col.get('code') : 'N/A';
-      }
+      },
     }).column('user', {
-      'title'  : 'User',
-      'format' : async (col) => {
+      title  : 'User',
+      format : async (col) => {
         return col ? col.get('username') : 'N/A';
-      }
+      },
     }).column('total', {
-      'sort'   : true,
-      'title'  : 'Order Total',
-      'format' : async (col) => {
-        return col ? '$' + parseFloat(col).toFixed(2) : 'N/A';
-      }
-    }).column('discount', {
-      'sort'   : true,
-      'title'  : 'Discount',
-      'format' : async (col) => {
-        return col ? '$' + parseFloat(col).toFixed(2) : 'N/A';
-      }
-    }).column('amount', {
-      'sort'   : true,
-      'title'  : 'Affiliate',
-      'format' : async (col) => {
-        return col ? '$' + parseFloat(col).toFixed(2) : 'N/A';
-      }
-    }).column('created_at', {
-      'sort'   : true,
-      'title'  : 'Created',
-      'format' : async (col) => {
-        return col.toLocaleDateString('en-GB', {
-          'day'   : 'numeric',
-          'month' : 'short',
-          'year'  : 'numeric'
-        });
-      }
-    });
+      sort   : true,
+      title  : 'Order Total',
+      format : async (col) => {
+        return col ? `$${parseFloat(col).toFixed(2)}` : 'N/A';
+      },
+    })
+      .column('discount', {
+        sort   : true,
+        title  : 'Discount',
+        format : async (col) => {
+          return col ? `$${parseFloat(col).toFixed(2)}` : 'N/A';
+        },
+      })
+      .column('amount', {
+        sort   : true,
+        title  : 'Affiliate',
+        format : async (col) => {
+          return col ? `$${parseFloat(col).toFixed(2)}` : 'N/A';
+        },
+      })
+      .column('created_at', {
+        sort   : true,
+        title  : 'Created',
+        format : async (col) => {
+          return col.toLocaleDateString('en-GB', {
+            day   : 'numeric',
+            month : 'short',
+            year  : 'numeric',
+          });
+        },
+      });
 
     // set default sort order
     refferalGrid.sort('created_at', 1);
 
     // add refund grid
     refferalGrid.where({
-      'affiliate.id' : affiliate.get('_id').toString()
+      'affiliate.id' : affiliate.get('_id').toString(),
     });
 
     // return grid
