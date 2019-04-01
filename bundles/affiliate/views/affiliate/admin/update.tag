@@ -148,10 +148,22 @@
               <div class="card-body">
                 <div each={ type, i in opts.types } class="form-group">
                   <label for={ type.type }>
-                    { type.type }
+                    { type.type } Affiliate Rate
                   </label>
                   <div class="input-group">
-                    <input class="form-control" type="number" value={ (opts.item.rates || {})[type.type] } name="rates[{ type.type }]" />
+                    <input class="form-control" type="number" value={ (opts.item.rates || {})[type.type].affiliate } name="rates[{ type.type }][affiliate]" />
+                    <div class="input-group-append">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                </div>
+                <hr />
+                <div each={ type, i in opts.types } class="form-group">
+                  <label for={ type.type }>
+                    { type.type } Discount Rate
+                  </label>
+                  <div class="input-group">
+                    <input class="form-control" type="number" value={ (opts.item.rates || {})[type.type].discount } name="rates[{ type.type }][discount]" />
                     <div class="input-group-append">
                       <span class="input-group-text">%</span>
                     </div>

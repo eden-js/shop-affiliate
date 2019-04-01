@@ -67,7 +67,7 @@ class AllAffiliateDaemon extends Daemon {
           if (!product) return accum;
 
           // check product
-          line.affiliate = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}`) || config.get('shop.affiliate') || 0, 10) / 100)).toFixed(2)) || 0;
+          line.affiliate = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}.affiliate`) || config.get('shop.affiliate') || 0, 10) / 100)).toFixed(2)) || 0;
 
           // return added
           return line.affiliate + accum;

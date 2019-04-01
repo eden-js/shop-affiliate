@@ -1,6 +1,7 @@
 
 // Require dependencies
 const Grid        = require('grid');
+const config      = require('config');
 const Controller  = require('controller');
 const escapeRegex = require('escape-string-regexp');
 
@@ -69,6 +70,11 @@ class AffiliateController extends Controller {
       // run next
       next();
     });
+
+    // do order hooks
+    this.eden.pre('checkout.init', this._checkout);
+    this.eden.pre('order.invoice', this._invoice);
+    this.eden.pre('order.affiliate', this._affiliate);
   }
 
   // ////////////////////////////////////////////////////////////////////////////
@@ -167,7 +173,7 @@ class AffiliateController extends Controller {
       });
 
       // save affiliate
-      if (!affiliate.get('_id').toString()) await affiliate.save();
+      if (!affiliate.get('_id')) await affiliate.save();
     }
 
     // check user
@@ -177,9 +183,6 @@ class AffiliateController extends Controller {
     if (req.user) {
       // try/catch
       try {
-        // check not already affiliated
-        if (await req.user.get('affiliate')) return next();
-
         // lock
         await req.user.lock();
 
@@ -201,6 +204,69 @@ class AffiliateController extends Controller {
 
     // redirect home
     res.redirect(req.query.r || req.query.redirect || '/');
+  }
+
+  /**
+   * support affiliate action
+   *
+   * @param  {Request}  req
+   * @param  {Response} res
+   * @param  {Function} next
+   *
+   * @route  {GET} /affiliate/:user/get
+   * @return {Promise}
+   */
+  async getAction(req, res, next) {
+    // let affiliate
+    let affiliate = null;
+
+    // get by user
+    const user = await User.findById(req.params.user);
+
+    // get by code
+    if (!affiliate && user) {
+      // get affilate
+      affiliate = await Affiliate.where({
+        'user.id' : user.get('_id').toString(),
+      }).findOne() || new Affiliate({
+        user,
+      });
+
+      // save affiliate
+      if (!affiliate.get('_id')) await affiliate.save();
+    }
+
+    // check user
+    if (!affiliate) return next();
+
+    // check user
+    if (req.user) {
+      // try/catch
+      try {
+        // lock
+        await req.user.lock();
+
+        // save affiliate
+        req.user.set('affiliate', affiliate);
+
+        // save user
+        await req.user.save();
+      } catch (e) {}
+
+      // check user
+      req.user.unlock();
+    } else {
+      // set cookie
+      res.cookie('affiliate', affiliate.get('_id').toString(), {
+        maxAge : 24 * 60 * 60 * 1000,
+      });
+    }
+
+    // return json
+    return res.json({
+      result  : await affiliate.sanitise(),
+      success : true,
+    });
   }
 
   /**
@@ -263,6 +329,114 @@ class AffiliateController extends Controller {
 
     // return post grid request
     return await (this._grid(req, affiliate)).post(req, res);
+  }
+
+  /**
+   * Checkout order
+   *
+   * @param  {Object} order
+   */
+  async _checkout(order) {
+    // get user
+    const user = await order.get('user');
+
+    // Add action
+    order.set('actions.affiliate', {
+      type     : 'affiliate',
+      data     : {},
+      value    : user && await user.get('affiliate') ? await (await user.get('affiliate')).sanitise() : {},
+      priority : 40,
+    });
+  }
+
+  /**
+   * On shipping
+   *
+   * @param  {order}   Order
+   * @param  {Object}  action
+   *
+   * @return {Promise}
+   */
+  async _invoice(order, invoice) {
+    // Augment order
+    const products = await order.get('products');
+
+    // Find shipping
+    const action = order.get('actions.affiliate');
+
+    // Check action exists
+    if (!action || !action.value || !action.value.id) return;
+
+    // set affiliate
+    const affiliate = await Affiliate.findById(action.value.id);
+
+    // Get discount value
+    const discount = parseFloat(order.get('lines').reduce((accum, line) => {
+      // get product
+      const product = products.find(p => p.get('_id').toString() === line.product);
+
+      // return accum
+      if (!product) return accum;
+
+      // check product
+      const d = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}.discount`) || config.get('shop.discount') || 0, 10) / 100)).toFixed(2)) || 0;
+
+      // return added
+      return d + accum;
+    }, 0));
+
+    // Log
+    invoice.set('total', invoice.get('total') - discount);
+    invoice.set('actual', invoice.get('total') + discount);
+    invoice.set('discount', discount);
+    invoice.set('affiliate', affiliate);
+
+    // Save invoice
+    await invoice.save();
+  }
+
+  /**
+   * On shipping
+   *
+   * @param  {order}   Order
+   * @param  {Object}  action
+   *
+   * @return {Promise}
+   */
+  async _affiliate(order, action) {
+    // Set shipping
+    const invoice = await order.get('invoice');
+    const products = await order.get('products');
+
+    // Check action value
+    if (!action.value || !action.value.id) return;
+
+    // set affiliate
+    const affiliate = await Affiliate.findById(action.value.id);
+
+    // Get discount value
+    const discount = parseFloat(order.get('lines').reduce((accum, line) => {
+      // get product
+      const product = products.find(p => p.get('_id').toString() === line.product);
+
+      // return accum
+      if (!product) return accum;
+
+      // check product
+      const d = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}.discount`) || config.get('shop.discount') || 0, 10) / 100)).toFixed(2)) || 0;
+
+      // return added
+      return d + accum;
+    }, 0));
+
+    // Log
+    invoice.set('total', invoice.get('total') - discount);
+    invoice.set('actual', invoice.get('total') + discount);
+    invoice.set('discount', discount);
+    invoice.set('affiliate', affiliate);
+
+    // Save invoice
+    await invoice.save();
   }
 
   /**
