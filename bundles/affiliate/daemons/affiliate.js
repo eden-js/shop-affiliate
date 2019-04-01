@@ -72,6 +72,20 @@ class AllAffiliateDaemon extends Daemon {
           // return added
           return line.affiliate + accum;
         }, 0)),
+
+        discount : parseFloat(order.get('lines').reduce((accum, line) => {
+          // get product
+          const product = products.find(p => p.get('_id').toString() === line.product);
+
+          // return accum
+          if (!product) return accum;
+
+          // check product
+          line.discount = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}.discount`) || config.get('shop.discount') || 0, 10) / 100)).toFixed(2)) || 0;
+
+          // return added
+          return line.discount + accum;
+        }, 0)),
       });
 
       // get lines
@@ -82,7 +96,8 @@ class AllAffiliateDaemon extends Daemon {
 
       // set values
       order.set('affiliate', credit);
-      order.set('expense.affiliate', credit.get('amount'));
+      order.set('expense.discount', credit.get('discount') || 0);
+      order.set('expense.affiliate', credit.get('amount') || 0);
       order.set('expense.total', Object.keys(order.get('expense')).reduce((accum, key) => {
         // check total
         if (key === 'total') return accum;
