@@ -370,7 +370,7 @@ class AffiliateController extends Controller {
     const affiliate = await Affiliate.findById(action.value.id);
 
     // Get discount value
-    const discount = parseFloat(order.get('lines').reduce((accum, line) => {
+    const discount = parseFloat(invoice.get('lines').reduce((accum, line) => {
       // get product
       const product = products.find(p => p.get('_id').toString() === line.product);
 
@@ -378,10 +378,10 @@ class AffiliateController extends Controller {
       if (!product) return accum;
 
       // check product
-      const d = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}.discount`) || config.get('shop.discount') || 0, 10) / 100)).toFixed(2)) || 0;
+      line.discount = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}.discount`) || config.get('shop.discount') || 0, 10) / 100)).toFixed(2)) || 0;
 
       // return added
-      return d + accum;
+      return line.discount + accum;
     }, 0));
 
     // Log
