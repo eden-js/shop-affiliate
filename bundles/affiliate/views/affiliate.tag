@@ -78,31 +78,14 @@
 
     <div class="row">
 
-      <div class="col-6" each={ code, i in opts.codes }>
+      <div class="col-4" each={ code, i in opts.codes }>
         <div class="card card-body">
-          <div class="row row-eq-height">
-            <div class="col-6">
-              <h2 class="m-0">
-                <a href="#!">
-                  { code.code }
-                </a>
-              </h2>
-            </div>
-            <div class="col-6 text-right d-flex align-items-center">
-              <div class="w-100">
-                Rate { code.rate }%, Discount { code.discount }%
-              </div>
-            </div>
-          </div>
+          <h2 class="m-0">
+            { code.code }
+          </h2>
         </div>
       </div>
 
-    </div>
-
-    <div class="mb-4 mt-4">
-      <a href="/affiliate/apply" class="btn btn-lg btn-success">
-        Apply for new code
-      </a>
     </div>
 
     <div class="grid-area">

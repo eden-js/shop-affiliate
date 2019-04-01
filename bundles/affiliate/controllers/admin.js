@@ -248,7 +248,6 @@ class AffiliateAdminController extends Controller {
 
     // get codes
     const codes = create ? [] : await Code.find({
-      state          : 'active',
       'affiliate.id' : affiliate.get('_id').toString(),
     });
 
@@ -257,6 +256,7 @@ class AffiliateAdminController extends Controller {
 
     // Render page
     res.render('affiliate/admin/update', {
+      tab     : req.query.tab,
       item    : await affiliate.sanitise(),
       form    : sanitised,
       grid    : create ? null : await grid.render(req),
@@ -357,6 +357,42 @@ class AffiliateAdminController extends Controller {
 
     // return update action
     return res.redirect(`/admin/affiliate/${affiliate.get('_id').toString()}/update`);
+  }
+
+  /**
+   * Add/edit action
+   *
+   * @param {Request}  req
+   * @param {Response} res
+   * @param {Function} next
+   *
+   * @route   {post} /:id/code
+   * @layout  admin
+   */
+  async codeAction(req, res, next) {
+    // Set website variable
+    let create = true;
+    let affiliate = new Affiliate();
+
+    // Check for website model
+    if (req.params.id) {
+      // Load by id
+      affiliate = await Affiliate.findById(req.params.id);
+      create = false;
+    }
+
+    // create code
+    const code = new Code({
+      affiliate,
+      code : req.body.code,
+      user : await affiliate.get('user'),
+    });
+
+    // save code
+    await code.save(req.user);
+
+    // return update action
+    return res.redirect(`/admin/affiliate/${affiliate.get('_id').toString()}/update?tab=codes`);
   }
 
   /**

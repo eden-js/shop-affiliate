@@ -181,12 +181,61 @@
               <grid grid={ opts.grid } table-class="table table-striped table-bordered" title="Affiliate Credits" />
             </div>
             
+            <div if={ this.tab === 'codes' }>
+              <div class="card-body">
+                <div class="row row-eq-height">
+                  <div class="col-4" each={ code, i in opts.codes }>
+                    <div class="card card-body">
+                      <h2 class="m-0">
+                        { code.code }
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer text-right">
+                <button class="btn btn-success" onclick={ onAddCode }>
+                  Add Code
+                </button>
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>
     </div>
     
   </div>
+  
+  <form if={ opts.item } method="post" action="/admin/affiliate/{ opts.item.id }/code" class="modal fade" id="code-modal" ref="code-modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h4 class="modal-title">Add Code</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <!-- Modal body -->
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="code">
+              Code
+            </label>
+            <input class="form-control" type="text" name="code" />
+          </div>
+        </div>
+
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-success">Submit</button>
+        </div>
+
+      </div>
+    </div>
+  </form>
 
   <script>
     // do mixin
@@ -242,6 +291,20 @@
       
       // update view
       this.update();
+    }
+    
+    /**
+     * on add code
+     *
+     * @param  {Event} e
+     */
+    onAddCode (e) {
+      // prevent default
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // show modal
+      jQuery(this.refs['code-modal']).modal('show');
     }
     
     /**
@@ -305,6 +368,21 @@
 
       // set tab
       this.tab = 'credits';
+      this.update();
+    }
+
+    /**
+     * on credits tab
+     *
+     * @param  {Event} e
+     */
+    onCodes(e) {
+      // prevent default
+      e.preventDefault();
+      e.stopPropagation();
+
+      // set tab
+      this.tab = 'codes';
       this.update();
     }
 
