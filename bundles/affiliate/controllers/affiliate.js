@@ -206,6 +206,48 @@ class AffiliateController extends Controller {
   }
 
   /**
+   * index action
+   *
+   * @param req
+   * @param res
+   *
+   * @route {GET} /affiliate/query
+   */
+  async queryAction(req, res) {
+    // find children
+    let users = await User;
+
+    // set query
+    if (req.query.q) {
+      users = users.or({
+        name : new RegExp(escapeRegex(req.query.q || ''), 'i'),
+      }, {
+        email : new RegExp(escapeRegex(req.query.q || ''), 'i'),
+      }, {
+        username : new RegExp(escapeRegex(req.query.q || ''), 'i'),
+      });
+    }
+
+    // add roles
+    users = await users.skip(((parseInt(req.query.page, 10) || 1) - 1) * 20).limit(50).find();
+
+    // get affiliates
+    const affiliates = await Affiliate.in('user.id', users.map(u => u.get('_id').toString())).limit(20).find();
+
+    // get children
+    res.json((await Promise.all(affiliates.map(aff => aff.sanitise()))).map((sanitised) => {
+      // get user
+      const sanitisedUser = Array.isArray(sanitised.user) ? sanitised.user[0] : sanitised.user;
+
+      // return object
+      return {
+        text  : sanitisedUser.name || sanitisedUser.username || sanitisedUser.email,
+        value : sanitised.id,
+      };
+    }));
+  }
+
+  /**
    * support affiliate action
    *
    * @param  {Request}  req
@@ -217,7 +259,7 @@ class AffiliateController extends Controller {
    */
   async getAction(req, res, next) {
     // let affiliate
-    let affiliate = null;
+    let affiliate = await Affiliate.findById(req.params.user);
 
     // get by user
     const user = await User.findById(req.params.user);

@@ -7,6 +7,7 @@ const escapeRegex = require('escape-string-regexp');
 
 // Require models
 const Code      = model('affiliateCode');
+const User      = model('user');
 const Block     = model('block');
 const Credit    = model('affiliateCredit');
 const Affiliate = model('affiliate');

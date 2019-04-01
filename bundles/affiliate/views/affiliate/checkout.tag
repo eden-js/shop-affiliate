@@ -21,7 +21,7 @@
         Support User
       </label>
       <div class="input-group">
-        <eden-select ref="select" class="form-control p-0" url="/admin/user/query" name="user" label={ 'Search by Name' } data={ { 'value' : null } } on-change={ onSelectUser }>
+        <eden-select ref="select" class="form-control p-0" url="/affiliate/query" name="user" label={ 'Search by Name' } data={ { 'value' : null } } on-change={ onSelectUser }>
           <option each={ user, i in opts.data.value || [] } selected="true" value={ user.id }>
             { user.text }
           </option>
