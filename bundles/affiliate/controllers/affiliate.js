@@ -74,7 +74,6 @@ class AffiliateController extends Controller {
     // do order hooks
     this.eden.pre('checkout.init', this._checkout);
     this.eden.pre('order.invoice', this._invoice);
-    this.eden.pre('order.affiliate', this._affiliate);
   }
 
   // ////////////////////////////////////////////////////////////////////////////
@@ -366,50 +365,6 @@ class AffiliateController extends Controller {
 
     // Check action exists
     if (!action || !action.value || !action.value.id) return;
-
-    // set affiliate
-    const affiliate = await Affiliate.findById(action.value.id);
-
-    // Get discount value
-    const discount = parseFloat(order.get('lines').reduce((accum, line) => {
-      // get product
-      const product = products.find(p => p.get('_id').toString() === line.product);
-
-      // return accum
-      if (!product) return accum;
-
-      // check product
-      const d = parseFloat(((line.total || 0) * (parseInt(affiliate.get(`rates.${product.get('type')}.discount`) || config.get('shop.discount') || 0, 10) / 100)).toFixed(2)) || 0;
-
-      // return added
-      return d + accum;
-    }, 0));
-
-    // Log
-    invoice.set('total', invoice.get('total') - discount);
-    invoice.set('actual', invoice.get('total') + discount);
-    invoice.set('discount', discount);
-    invoice.set('affiliate', affiliate);
-
-    // Save invoice
-    await invoice.save();
-  }
-
-  /**
-   * On shipping
-   *
-   * @param  {order}   Order
-   * @param  {Object}  action
-   *
-   * @return {Promise}
-   */
-  async _affiliate(order, action) {
-    // Set shipping
-    const invoice = await order.get('invoice');
-    const products = await order.get('products');
-
-    // Check action value
-    if (!action.value || !action.value.id) return;
 
     // set affiliate
     const affiliate = await Affiliate.findById(action.value.id);
