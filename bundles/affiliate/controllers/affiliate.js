@@ -202,7 +202,7 @@ class AffiliateController extends Controller {
     }
 
     // redirect home
-    res.redirect(req.query.r || req.query.redirect || '/');
+    return res.redirect(req.query.r || req.query.redirect || '/');
   }
 
   /**
