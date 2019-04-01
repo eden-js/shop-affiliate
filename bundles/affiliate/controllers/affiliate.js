@@ -528,7 +528,7 @@ class AffiliateController extends Controller {
 
     // add refund grid
     creditGrid.where({
-      'affiliate.id' : affiliate.get('_id').toString(),
+      'affiliate.id' : affiliate ? affiliate.get('_id').toString() : 'null',
     });
 
     // return grid
