@@ -24,7 +24,7 @@ const affiliateHelper = helper('affiliate');
  *
  * @acl   admin
  * @fail  next
- * @mount /admin/affiliate
+ * @mount /admin/shop/affiliate
  */
 class AffiliateAdminController extends Controller {
   /**
@@ -179,6 +179,7 @@ class AffiliateAdminController extends Controller {
    * @menu     {ADMIN} Affiliates
    * @title    Affiliate Administration
    * @route    {get} /
+   * @parent   /admin/shop
    * @layout   admin
    * @priority 10
    */
@@ -596,7 +597,7 @@ class AffiliateAdminController extends Controller {
     const affiliateGrid = new Grid();
 
     // Set route
-    affiliateGrid.route('/admin/affiliate/grid');
+    affiliateGrid.route('/admin/shop/affiliate/grid');
 
     // get form
     const form = await formHelper.get('edenjs.shop.affiliate');
