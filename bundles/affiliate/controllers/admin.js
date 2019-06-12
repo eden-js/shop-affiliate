@@ -7,17 +7,15 @@ const escapeRegex = require('escape-string-regexp');
 
 // Require models
 const Code      = model('affiliateCode');
-const User      = model('user');
 const Block     = model('block');
 const Credit    = model('affiliateCredit');
 const Affiliate = model('affiliate');
 
 // require helpers
-const formHelper      = helper('form');
-const fieldHelper     = helper('form/field');
-const blockHelper     = helper('cms/block');
-const productHelper   = helper('product');
-const affiliateHelper = helper('affiliate');
+const formHelper    = helper('form');
+const fieldHelper   = helper('form/field');
+const blockHelper   = helper('cms/block');
+const productHelper = helper('product');
 
 /**
  * Build affiliate controller

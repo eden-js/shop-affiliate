@@ -13,8 +13,7 @@ const Product   = model('product');
 const Affiliate = model('affiliate');
 
 // require helpers
-const modelHelper     = helper('model');
-const affiliateHelper = helper('affiliate');
+const modelHelper = helper('model');
 
 /**
  * Build affiliate controller
@@ -94,7 +93,7 @@ class AffiliateController extends Controller {
    */
   async listenAction(id, uuid, opts) {
     // / return if no id
-    if (!id) return;
+    if (!id) return null;
 
     // join room
     opts.socket.join(`affiliate.${id}`);
@@ -114,7 +113,7 @@ class AffiliateController extends Controller {
    */
   async deafenAction(id, uuid, opts) {
     // / return if no id
-    if (!id) return;
+    if (!id) return null;
 
     // join room
     opts.socket.leave(`affiliate.${id}`);
