@@ -7,14 +7,6 @@ const Model = require('model');
  */
 class AffiliateCredit extends Model {
   /**
-   * Construct acl model
-   */
-  constructor() {
-    // Run super
-    super(...arguments);
-  }
-
-  /**
    * Sanitises acl class
    *
    * @return {*}
@@ -33,4 +25,4 @@ class AffiliateCredit extends Model {
  * Export acl model
  * @type {acl}
  */
-exports = module.exports = AffiliateCredit;
+module.exports = AffiliateCredit;

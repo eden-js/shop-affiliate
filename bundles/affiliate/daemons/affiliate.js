@@ -7,8 +7,7 @@ const config = require('config');
 const Credit = model('affiliateCredit');
 
 // require helpers
-const balanceHelper   = helper('balance');
-const affiliateHelper = helper('affiliate');
+const balanceHelper = helper('balance');
 
 /**
  * extend affiliate Daemon

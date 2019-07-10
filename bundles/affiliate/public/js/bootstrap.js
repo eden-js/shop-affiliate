@@ -51,6 +51,7 @@ class Affiliate extends Events {
       if (!product) return accum;
 
       // check product
+      // eslint-disable-next-line max-len
       const d = parseFloat(((line.total || 0) * (parseInt(((affiliate.rates || {})[product.type] || {}).discount || 0, 10) / 100)).toFixed(2)) || 0;
 
       // return added
@@ -71,4 +72,4 @@ class Affiliate extends Events {
  *
  * @return {affiliate}
  */
-exports = module.exports = new Affiliate();
+module.exports = new Affiliate();

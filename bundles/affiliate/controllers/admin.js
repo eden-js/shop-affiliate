@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 
 // Require dependencies
 const Grid        = require('grid');
@@ -125,10 +126,14 @@ class AffiliateAdminController extends Controller {
     }, async (req, field, value) => {
       // set tag
       field.tag = 'affiliate';
-      field.value = value ? (Array.isArray(value) ? await Promise.all(value.map(item => item.sanitise())) : await value.sanitise()) : null;
+      // eslint-disable-next-line no-nested-ternary
+      field.value = value ? (Array.isArray(value) ? await Promise.all(value.map((item) => {
+        // return sanitised
+        return item.sanitise();
+      })) : await value.sanitise()) : null;
       // return
       return field;
-    }, async (req, field) => {
+    }, async () => {
       // save field
     }, async (req, field, value, old) => {
       // set value
@@ -229,10 +234,11 @@ class AffiliateAdminController extends Controller {
     const affiliateController = await this.eden.controller('affiliate/controllers/affiliate');
 
     // create grid
+    // eslint-disable-next-line no-underscore-dangle
     const grid = await affiliateController._grid(req, affiliate);
 
     // check create
-    if (!create) grid.route(`/admin/affiliate/${affiliate.get('_id').toString()}/grid`)
+    if (!create) grid.route(`/admin/affiliate/${affiliate.get('_id').toString()}/grid`);
 
     // get form
     const form = await formHelper.get('edenjs.shop.affiliate');
@@ -316,16 +322,14 @@ class AffiliateAdminController extends Controller {
    * @route   {post} /:id/update
    * @layout  admin
    */
-  async updateSubmitAction(req, res, next) {
+  async updateSubmitAction(req, res) {
     // Set website variable
-    let create = true;
     let affiliate = new Affiliate();
 
     // Check for website model
     if (req.params.id) {
       // Load by id
       affiliate = await Affiliate.findById(req.params.id);
-      create = false;
     }
 
     // check type of submit
@@ -369,16 +373,14 @@ class AffiliateAdminController extends Controller {
    * @route   {post} /:id/code
    * @layout  admin
    */
-  async codeAction(req, res, next) {
+  async codeAction(req, res) {
     // Set website variable
-    let create = true;
     let affiliate = new Affiliate();
 
     // Check for website model
     if (req.params.id) {
       // Load by id
       affiliate = await Affiliate.findById(req.params.id);
-      create = false;
     }
 
     // create code
@@ -484,7 +486,10 @@ class AffiliateAdminController extends Controller {
       .find();
 
     // get children
-    res.json((await Promise.all(affiliates.map(affiliate => affiliate.sanitise()))).map((sanitised) => {
+    res.json((await Promise.all(affiliates.map((affiliate) => {
+      // return sanitised
+      return affiliate.sanitise();
+    }))).map((sanitised) => {
       // return object
       return {
         text  : sanitised.name,
@@ -538,6 +543,7 @@ class AffiliateAdminController extends Controller {
     const affiliateController = await this.eden.controller('affiliate/controllers/affiliate');
 
     // Return post grid request
+    // eslint-disable-next-line no-underscore-dangle
     return (await affiliateController._grid(req, affiliate)).post(req, res);
   }
 

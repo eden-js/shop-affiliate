@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 
 // Require dependencies
 const Grid        = require('grid');

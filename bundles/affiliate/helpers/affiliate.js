@@ -8,13 +8,6 @@ const Helper = require('helper');
  * @extends {helper}
  */
 class AffiliateHelper extends Helper {
-  /**
-   * construct notification helper
-   */
-  constructor() {
-    // run super
-    super();
-  }
 }
 
 /**
