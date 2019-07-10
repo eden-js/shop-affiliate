@@ -1,0 +1,21 @@
+language: node_js
+node_js:
+- '10'
+sudo: false
+install:
+- npm install --only=dev
+- npm ci
+before_script:
+- node node_modules/eslint/bin/eslint.js .
+script:
+- node ./edenconfig.js
+after_script:
+- npm test
+deploy:
+  provider: npm
+  email: alex@edenup.com
+  api_key:
+    secure: Ikc7/WLXbLSHS2Na9tpDmKFBS3xPhdGQzCoCP6Aiai/Z1QzWZrNS4i+vF+NpVZOmJh/wkqfyGgCcNZsnWEyDlFGXQqlrayd6bJYCfy+KYHwZPbuWr4xU+G8US7P+y69dOv4iJ2dXKpaxv4SACngjMzKIgXT8PCOYx9vi3LCsgazXTJZJ30NyB1gnSAsEOZTzPwGxOaJXk68hGiUleP4NVp3WQ2V7+zt2sLc6mvGhi6wXUKSQIDqSYlDA73ypcWUdYyfVVhJs40wBnBaNCH0MMOi/n91w/PiC4x2Qtby6dCaJJHWHUqOUWFrvLM27bEpoJD+pYv06NOpQjnR9YM8y55/3WTx6VfbHXs8qeHmG+C6AN8XJOwNsgh9mwBMakwYDmhvY6YlUxX1DywMX68AbC5yN5y3oJVmcVybo4VLNi7Y4DTVm8xelI+0KcGY47vn8UBQr4OQU5rKtH+yI4jyiDoxjxIfGf5ftP3Kh1ChkvjYJp1gbjsS3lbPFduU2G+5ITu4Y2eAb+J1rYZUEEeW3QSmlHOBPC5+CMMQqoO5bgE+tmeY/vY633gKiWqY4FN0pkVuClG9Q6lNheP8PCAV40cYC7c50q2+udV9NveVbQZmMrVWC92wvQmghRJah/Kk/GP1tuilqcs9z9+Sv7UeBXoPcbq8/XrcwZWG8p6qHV8Q=
+  on:
+    tags: true
+    repo: eden-js/shop-affiliate
