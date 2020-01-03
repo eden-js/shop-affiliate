@@ -2,16 +2,16 @@
   <div class="page page-shop">
 
     <admin-header title="Remove Affiliate">
-      <yield to="right">
+      <div slot="right">
         <a href="/admin/affiliate" class="btn btn-lg btn-primary">
           Back
         </a>
-      </yield>
+      </div>
     </admin-header>
     
     <div class="container-fluid">
     
-      <form method="post" action="/admin/affiliate/{ opts.item.id }/remove">
+      <form method="post" action={ `/admin/affiliate/${props.item.id}/remove` }>
         <div class="card mb-3">
           <div class="card-body">
             <p>
@@ -24,13 +24,4 @@
     
     </div>
   </div>
-  
-  <script>
-    // do mixins
-    this.mixin('i18n');
-
-    // load data
-    this.language = this.i18n.lang();
-
-  </script>
 </affiliate-admin-remove-page>

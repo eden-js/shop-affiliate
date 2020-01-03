@@ -1,0 +1,104 @@
+<affiliate-summary-extra>
+  <div class="card card-shipping card-checkout mb-3">
+    <div class="card-body" if={ props.action.value && getUser(props.action.value) }>
+      <label for="affiliate">
+        { get('i18n.t')('affiliate.title') }
+      </label>
+      <div class="input-group">
+        <input class="form-control" type="text" readonly value={ getUser(props.action.value).username } />
+        <div class="input-group-append">
+          <button class="btn btn-danger" onclick={ onRemove }>
+            <i class="fa fa-times" />
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body" if={ !props.action.value || !getUser(props.action.value) }>
+      <label for="affiliate">
+        { get('i18n.t')('affiliate.title') }
+      </label>
+      <div class="input-group">
+        <eden-select ref="select" class="form-control p-0" url="/affiliate/query" name="user" label="Search by Name" data={ { 'value' : null } } on-change={ onSelectUser }>
+          <option each={ (user, i) in get('data.value', []) } selected="true" value={ user.id || '' }>
+            { user.text }
+          </option>
+        </eden-select>
+        <div class="input-group-append" if={ loading() }>
+          <div class="input-group-text">
+            <i class="fa fa-spinner fa-spin" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // import base
+    import Base from '../../js/base';
+
+    // export default
+    export default class AffiliateSummaryExtra extends Base {
+    
+      /**
+       * on remove
+       *
+       * @param  {Event} e
+       *
+       * @return {*}
+       */
+      onRemove(e) {
+        // prevent default
+        e.preventDefault();
+        e.stopPropagation();
+
+        // set value
+        this.props.action.value = {};
+        
+        // update parent
+        eden.checkout.update();
+          
+        // update
+        this.update();
+      }
+      
+      /**
+       * on select user
+       *
+       * @param  {Event} e
+       *
+       * @return {*}
+       */
+      async onSelectUser(e) {
+        // return
+        if (!e.target.value) return;
+        
+        // get affiliate
+        this.loading('affiliate', true);
+        
+        // set res
+        const res = await fetch(`/affiliate/${e.target.value}/get`);
+        
+        // get json
+        this.props.action.value = (await res.json()).result;
+        
+        // update parent
+        eden.checkout.update();
+        
+        // get affiliate
+        this.loading('affiliate', false);
+      }
+      
+      /**
+       * gets user from value
+       *
+       * @param  {*} value
+       * @return {*}
+       */
+      getUser(value) {
+        // gets value
+        return value && Array.isArray(value.user) ? value.user[0] : value.user;
+      }
+    }
+
+  </script>
+</affiliate-summary-extra>

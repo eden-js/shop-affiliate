@@ -13,7 +13,7 @@
               This Month
             </p>
             <h3 class="text-uppercase text-primary">
-              <money amount={ ((opts.credits || {}).all || 0) } /> / { opts.totals.month.toLocaleString() }
+              <money amount={ get('credits.all', 0) } /> / { props.totals.month.toLocaleString() }
             </h3>
           </div>
         </div>
@@ -31,7 +31,7 @@
               All Time
             </p>
             <h3 class="text-uppercase text-primary">
-              <money amount={ ((opts.credits || {}).all || 0) } /> / { opts.totals.all.toLocaleString() }
+              <money amount={ get('credits.all', 0) } /> / { props.totals.all.toLocaleString() }
             </h3>
           </div>
         </div>
@@ -49,7 +49,7 @@
               Total Paid
             </p>
             <h3 class="text-uppercase text-primary">
-              ${ (opts.orders || 0).toLocaleString() }
+              ${ get('orders').toLocaleString() }
             </h3>
           </div>
         </div>
@@ -67,7 +67,7 @@
               withdrawable
             </p>
             <h3 class="text-uppercase text-primary">
-              ${ this.balance.balance.toLocaleString() }
+              ${ user.get('balance') }
             </h3>
           </div>
         </div>
@@ -78,7 +78,7 @@
 
     <div class="row">
 
-      <div class="col-4" each={ code, i in opts.codes }>
+      <div class="col-4" each={ (code, i) in props.codes }>
         <div class="card card-body">
           <h2 class="m-0">
             { code.code }
@@ -89,26 +89,29 @@
     </div>
 
     <div class="grid-area">
-      <grid grid={ opts.grid } table-class="table table-striped table-bordered" title="Affiliate Credits" />
+      <grid grid={ props.grid } table-class="table table-striped table-bordered" title="Affiliate Credits" />
     </div>
 
   </div>
 
   <script>
-    // do mixins
-    this.mixin('user');
-    this.mixin('balance');
+    // import base
+    import Base from './js/base';
+    import User from './js/user';
 
-    /**
-     * on mount function
-     */
-    this.on('mount', () => {
-      // check frontend
-      if (!this.eden.frontend) return;
+    // export default
+    export default class AffiliatePage extends Base {
 
-      // update
-      this.update();
-    });
+      /**
+       * on before mount
+       */
+      onBeforeMount(...args) {
+        // run super
+        super.onBeforeMount(...args);
 
+        // done
+        User(this);
+      }
+    }
   </script>
 </affiliate-page>

@@ -1,0 +1,26 @@
+<element-affiliate>
+  <span each={ (item, i) in affiliates }>
+    <a href={ `/admin/affiliate/${item.id}/update` }>{ item.name }</a>
+    { i === affiliates.length - 1 ? '' : ', ' }
+  </span>
+  
+  <script>
+    // import base
+    import Base from '../js/base';
+
+    // export default
+    export default class ElementAffiliate extends Base {
+      
+      /**
+       * on before mount
+       */
+      onBeforeMount(...args) {
+        // run super
+        super.onBeforeMount(...args);
+
+        // set affiliates
+        this.affiliates = (Array.isArray(props.data.value) ? props.data.value : [props.data.value]).filter(v => v);
+      }
+    }
+  </script>
+</element-affiliate>

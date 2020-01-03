@@ -1,0 +1,8 @@
+<affiliate-summary-subtotal>
+  <div class="discount-total text-success" if={ props.action && props.action.value.id && props.action.value.discount }>
+    <p class="mb-2">
+      Supporter Discount
+      <money class="float-right" amount={ props.action.value.discount || 0 } />
+    </p>
+  </div>
+</affiliate-summary-subtotal>

@@ -1,0 +1,78 @@
+<field-affiliate>
+  <field ref={ ref('field') } class="field-container-inner" { ...fieldProps() }>
+    <div slot="body">
+      <div class={ props.field.group || 'form-group' }>
+        <label for={ props.field.uuid }>
+          { props.field.label }
+          <i if={ !props.field.label }>Set Label</i>
+        </label>
+        <eden-select ref="select" url="/admin/affiliate/query" required={ props.field.required } name={ props.field.uuid } multiple={ props.field.multiple } label={ props.field.label || 'Search by Name' } data={ props.data }>
+          <option each={ (affiliate, i) in get('data.value', []) } selected="true" value={ affiliate.id || '' }>
+            { affiliate.name }
+          </option>
+        </eden-select>
+      </div>
+    </div>
+  </field>
+
+  <script>
+    // import base
+    import Base from '../js/base';
+
+    // export default
+    export default class FieldAffiliate extends Base {
+      /**
+       * on before mount
+       */
+      onBeforeMount() {
+        // run super
+        super.onBeforeMount(...arguments);
+
+        // on change
+        this.onChange = this.onChange.bind(this);
+    
+        // set initial value
+        this.value = this.props.data.value;
+      }
+
+      /**
+       * return field props
+       */
+      fieldProps() {
+        // return opts
+        return {
+          value     : this.value,
+          field     : this.props.field,
+          preview   : this.props.preview,
+          placement : this.props.placement,
+
+          'onSave'     : this.props.onSave,
+          'isInput'    : true,
+          'onRemove'   : this.props.onRemove,
+          'isMultiple' : true,
+        };
+      }
+
+      /**
+      * on change
+      *
+      * @param {Event} e
+      */
+      onChange(e) {
+        // set value
+        this.props.data.value = this.val();
+      }
+
+      /**
+      * return value
+      *
+      * @return {*}
+      */
+      val() {
+        // return value
+        return this.refs.field.refs.select.val();
+      }
+    }
+
+  </script>
+</field-affiliate>
